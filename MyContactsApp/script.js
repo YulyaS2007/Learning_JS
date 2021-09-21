@@ -69,10 +69,21 @@ class ContactsApp extends Contacts{
     constructor() {
         super();
 
-        this.app();
+        // let storageTime = this.getCookie("storageTime");
+        // if (!storageTime) localStorage.removeItem("users");
 
-        let storageTime = this.getCookie("storageTime");
-        if (!storageTime) localStorage.removeItem("users");
+        if (!this.storage) {
+            this.getData()
+            .then(dataUser => { 
+                this.storage = dataUser;
+
+                this.app();
+            });
+        } else {
+
+        this.app();
+        };
+
     };    
 
     app() {
@@ -91,7 +102,7 @@ class ContactsApp extends Contacts{
             <th>Email</th>
             <th>Address</th>
             <th>Phone</th>
-            <th><p>DEL</p></th>
+            <th><p>Action</p></th>
         `);
 
         this.submit.addEventListener('click', event => {
@@ -108,15 +119,40 @@ class ContactsApp extends Contacts{
         });
 
         const data = this.storage || [];
+
         
+        console.log(data);
+
+
         if (data.length > 0) {
             this.contactsUsers = data;
             this.updateList();
         }
     };
 
-    setCookie(name, value, options = {}) {
+    async getData() {
+        return await fetch('https://jsonplaceholder.typicode.com/users')
+        .then(response => {
+            return response.json();
+        })
+        .then(dataUser => {
+            dataUser = dataUser.map(post => {
+                return {
+                    dataUser: {
+                        id: post.id, 
+                        firstName: post.username, 
+                        email: post.email, 
+                        address: `${post.address.street},` + ` ${post.address.suite},` + ` ${post.address.city},` + ` ${post.address.zipcode}`, 
+                        phone: post.phone
+                    }
+                }
+            });
 
+            return dataUser;
+        });
+    }
+
+    setCookie(name, value, options = {}) {
         options = {
           path: '/',
           // при необходимости добавьте другие значения по умолчанию
@@ -166,9 +202,9 @@ class ContactsApp extends Contacts{
         data = JSON.parse(data) || [];
 
         if (!data || data.length == 0) return;
-        
+       
         data = data.map(user => {
-            user = new User(user.dataUser.id, user.dataUser.firstName, user.dataUser.email, user.dataUser.address, user.dataUser.phone);
+            user = new User(user.dataUser.id || data.id, user.dataUser.firstName, user.dataUser.email, user.dataUser.address, user.dataUser.phone);
             return user;
         });
 
@@ -185,10 +221,11 @@ class ContactsApp extends Contacts{
         this.trTheadList.insert(this.titeleList);
         const contactListBody = $.create("tbody").classAdd("contactListBody");
         contactListBody.insert(this.contactListTable);
-
         this.delAll.insert(this.listContacts);
 
+
         const data = this.addUser;
+
         data.forEach(contact => {
             const tr = $.create("tr");
             const tdNamber = $.create("td").html(`${contact.dataUser.id}`).attr("id", "tdName" + `${contact.dataUser.id}`);
@@ -269,6 +306,7 @@ class ContactsApp extends Contacts{
         });
 
         this.storage = data;
+        console.log(this.storage);
     };
 
     checkedForm() {    
